@@ -12,6 +12,10 @@ RUN npm run build && npm prune --omit=dev --workspaces --include-workspace-root
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# Runtime only runs `node apps/server/dist/main.js`; drop npm/npx/corepack and
+# their bundled deps (pacote, sigstore, ip-address, picomatch, brace-expansion,
+# ...) so the shipped image doesn't carry CVEs from tooling it never executes.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/apps/server/package.json ./apps/server/package.json
